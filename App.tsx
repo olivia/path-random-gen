@@ -115,7 +115,7 @@ const isParallel = ([l1s, l1e], [l2s, l2e]) => {
 };
 const pDir = ['NW', 'NE', 'SE', 'SW', 'N', 'E', 'S', 'W'];
 
-const randomWalk = ({ index, maxStep, dhRatio, skipList = [] }) => {
+const randomWalk = ({ pivotPoint, maxStep, dhRatio, skipList = [] }) => {
   const [isDiagonal, dir, magnitude] = [
     Math.random() < dhRatio,
     Math.round(Math.random() * 3),
@@ -142,7 +142,7 @@ const randomWalk = ({ index, maxStep, dhRatio, skipList = [] }) => {
   const offset =
     nonskippedOffset[Math.round(Math.random() * (nonskippedOffset.length - 1))];
 
-  const oldXY = idxToXY(index);
+  const oldXY = idxToXY(pivotPoint);
   let newXY = [
     Math.min(maxx - 1, Math.max(minx, oldXY[0] + offset[0])),
     Math.min(maxy - 1, Math.max(miny, oldXY[1] + offset[1])),
@@ -159,7 +159,9 @@ const randomWalk = ({ index, maxStep, dhRatio, skipList = [] }) => {
     ];
   }
 
-  return [offsets.indexOf(offset), xyToIdx(newXY as [number, number])];
+  const perturbedPoint = xyToIdx(newXY as [number, number]);
+
+  return [offsets.indexOf(offset), [pivotPoint, perturbedPoint]] as const;
 };
 
 const getLineArr = (prevPoints) => {
@@ -173,22 +175,21 @@ const getLineArr = (prevPoints) => {
 };
 
 // if can insert
-const canInsert = (le, prevPoints) => {
+const canInsert = (newLine, prevPoints) => {
   if (prevPoints.length >= 2) {
     let found = 0;
     const lines = getLineArr(prevPoints);
-    const startPoint = prevPoints[prevPoints.length - 1];
-    if (isParallel([startPoint, le], lines[lines.length - 1])) {
+    if (isParallel(newLine, lines[lines.length - 1])) {
       console.log('is parallel');
       return false;
     }
 
     for (const l of lines) {
-      if (l[1] == startPoint) {
+      if (l[1] == newLine[0]) {
         console.log('skipping for now');
-      } else if (lineIdxIntersects([startPoint, le], l)) {
+      } else if (lineIdxIntersects(newLine, l)) {
         console.log('interesect with');
-        console.log(prettyPrint([startPoint, le], l));
+        console.log(prettyPrint(newLine, l));
         return false;
       }
     }
@@ -209,18 +210,20 @@ export default function App() {
       let iterations = 0;
       let found = false;
       let skipList = [];
+      const pivotPoint = prevPoints[prevPoints.length - 1];
       while (iterations <= 100) {
-        const [offsetAttempt, p] = randomWalk({
-          index: prev,
+        const [offsetAttempt, newLine] = randomWalk({
+          pivotPoint,
           maxStep,
           dhRatio,
           skipList,
         });
-        if (canInsert(p, prevPoints)) {
-          return p;
+
+        if (canInsert(newLine, prevPoints)) {
+          return newLine[1];
         }
         console.log(
-          `Tried ${pDir[offsetAttempt]} with node ${prev} w skiplist: ${skipList}`
+          `Tried ${pDir[offsetAttempt]} with node ${pivotPoint} w skiplist: ${skipList}`
         );
         if (skipList.length === 7) {
           console.log('clearing skiplist');
