@@ -23,7 +23,7 @@ const xyToCart = ([x, y]) => {
 
 const randomUniqArr = (n, randGen) => {
   const res = [];
-  let maxiters = 1000;
+  let maxiters = 100;
   while (n && maxiters >= 0) {
     let r;
     try {
@@ -160,7 +160,7 @@ const getLineArr = (prevPoints) => {
 };
 
 // if can insert
-const canInsert = (l1s, prevPoints) => {
+const canInsert = (l1s, prevPoints, shapenum) => {
   if (prevPoints.length >= 2) {
     let found = 0;
     const lines = getLineArr(prevPoints);
@@ -189,14 +189,14 @@ export default function App() {
   const [shapeNum, setShapeNum] = React.useState(3);
 
   const randArr = randomUniqArr(shapeNum * 3, (prev, prevPoints) => {
-    if (prev === undefined) {
+    if (prev === undefined || prevPoints.length % shapeNum === 0) {
       return randIdx();
     } else {
       let iterations = 0;
       let found = false;
-      while (iterations <= 1000) {
+      while (iterations <= 100) {
         const p = randomWalk({ index: prev, maxStep, dhRatio });
-        if (canInsert(p, prevPoints)) {
+        if (canInsert(p, prevPoints, shapeNum)) {
           return p;
         }
         iterations++;
